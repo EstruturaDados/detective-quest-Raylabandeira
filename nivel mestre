@@ -1,0 +1,160 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define TAM_HASH 10
+
+// Nó da árvore de pistas
+typedef struct PistaBST {
+    char nome[30];
+    struct PistaBST *esquerda;
+    struct PistaBST *direita;
+} PistaBST;
+
+// Nó da lista encadeada da tabela hash
+typedef struct Associacao {
+    char pista[30];
+    char suspeito[30];
+    struct Associacao *prox;
+} Associacao;
+
+// Tabela hash
+typedef struct {
+    Associacao *tabela[TAM_HASH];
+} HashTable;
+
+// Função de espalhamento simples (soma ASCII % TAM_HASH)
+int hash(const char *pista) {
+    int soma = 0;
+    for (int i = 0; pista[i] != '\0'; i++) {
+        soma += pista[i];
+    }
+    return soma % TAM_HASH;
+}
+
+// Cria nova pista na BST
+PistaBST* criarPista(const char *nome) {
+    PistaBST *nova = (PistaBST*)malloc(sizeof(PistaBST));
+    strcpy(nova->nome, nome);
+    nova->esquerda = nova->direita = NULL;
+    return nova;
+}
+
+// Insere pista na BST
+PistaBST* inserirPista(PistaBST *raiz, const char *nome) {
+    if (raiz == NULL) return criarPista(nome);
+    if (strcmp(nome, raiz->nome) < 0)
+        raiz->esquerda = inserirPista(raiz->esquerda, nome);
+    else if (strcmp(nome, raiz->nome) > 0)
+        raiz->direita = inserirPista(raiz->direita, nome);
+    return raiz;
+}
+
+// Exibe pistas em ordem
+void emOrdem(PistaBST *raiz) {
+    if (raiz != NULL) {
+        emOrdem(raiz->esquerda);
+        printf("🔎 %s\n", raiz->nome);
+        emOrdem(raiz->direita);
+    }
+}
+
+// Inicializa tabela hash
+void inicializarHash(HashTable *ht) {
+    for (int i = 0; i < TAM_HASH; i++) {
+        ht->tabela[i] = NULL;
+    }
+}
+
+// Insere associação pista → suspeito
+void inserirNaHash(HashTable *ht, const char *pista, const char *suspeito) {
+    int indice = hash(pista);
+    Associacao *nova = (Associacao*)malloc(sizeof(Associacao));
+    strcpy(nova->pista, pista);
+    strcpy(nova->suspeito, suspeito);
+    nova->prox = ht->tabela[indice];
+    ht->tabela[indice] = nova;
+}
+
+// Lista todas as pistas por suspeito
+void listarSuspeitos(HashTable *ht) {
+    printf("\n📁 Pistas por suspeito:\n");
+    for (int i = 0; i < TAM_HASH; i++) {
+        Associacao *atual = ht->tabela[i];
+        while (atual != NULL) {
+            printf("🧩 %s → 🕵️ %s\n", atual->pista, atual->suspeito);
+            atual = atual->prox;
+        }
+    }
+}
+
+// Descobre o suspeito mais citado
+void suspeitoMaisCitado(HashTable *ht) {
+    char suspeitos[50][30];
+    int contadores[50] = {0};
+    int total = 0;
+
+    for (int i = 0; i < TAM_HASH; i++) {
+        Associacao *atual = ht->tabela[i];
+        while (atual != NULL) {
+            int encontrado = 0;
+            for (int j = 0; j < total; j++) {
+                if (strcmp(suspeitos[j], atual->suspeito) == 0) {
+                    contadores[j]++;
+                    encontrado = 1;
+                    break;
+                }
+            }
+            if (!encontrado) {
+                strcpy(suspeitos[total], atual->suspeito);
+                contadores[total] = 1;
+                total++;
+            }
+            atual = atual->prox;
+        }
+    }
+
+    int max = 0;
+    for (int i = 1; i < total; i++) {
+        if (contadores[i] > contadores[max]) {
+            max = i;
+        }
+    }
+
+    if (total > 0)
+        printf("\n🎯 Suspeito mais citado: %s (%d pistas)\n", suspeitos[max], contadores[max]);
+    else
+        printf("\n⚠️ Nenhuma pista associada a suspeitos.\n");
+}
+
+// Simulação do jogo
+int main() {
+    PistaBST *raizBST = NULL;
+    HashTable ht;
+    inicializarHash(&ht);
+
+    // Simulando pistas encontradas
+    raizBST = inserirPista(raizBST, "mancha de sangue");
+    inserirNaHash(&ht, "mancha de sangue", "Sr. Black");
+
+    raizBST = inserirPista(raizBST, "livro rasgado");
+    inserirNaHash(&ht, "livro rasgado", "Sra. White");
+
+    raizBST = inserirPista(raizBST, "documento queimado");
+    inserirNaHash(&ht, "documento queimado", "Srta. Scarlet");
+
+    raizBST = inserirPista(raizBST, "taça quebrada");
+    inserirNaHash(&ht, "taça quebrada", "Sr. Black");
+
+    raizBST = inserirPista(raizBST, "pegada de lama");
+    inserirNaHash(&ht, "pegada de lama", "Sr. Black");
+
+    // Exibição
+    printf("\n📜 Pistas coletadas:\n");
+    emOrdem(raizBST);
+
+    listarSuspeitos(&ht);
+    suspeitoMaisCitado(&ht);
+
+    return 0;
+}
