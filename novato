@@ -1,0 +1,77 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Estrutura da sala (nó da árvore)
+typedef struct Sala {
+    char nome[30];
+    struct Sala *esquerda;
+    struct Sala *direita;
+} Sala;
+
+// Cria uma nova sala
+Sala* criarSala(const char *nome, Sala *esq, Sala *dir) {
+    Sala *nova = (Sala*)malloc(sizeof(Sala));
+    if (nova != NULL) {
+        strcpy(nova->nome, nome);
+        nova->esquerda = esq;
+        nova->direita = dir;
+    }
+    return nova;
+}
+
+// Exploração interativa da mansão
+void explorarSalas(Sala *atual) {
+    char escolha;
+    while (atual != NULL) {
+        printf("\n📍 Você está na sala: %s\n", atual->nome);
+        if (atual->esquerda == NULL && atual->direita == NULL) {
+            printf("🔍 Fim do caminho. Sala sem saída.\n");
+            break;
+        }
+
+        printf("Escolha o caminho:\n");
+        if (atual->esquerda != NULL) printf("e - Ir para a esquerda\n");
+        if (atual->direita != NULL) printf("d - Ir para a direita\n");
+        printf("s - Sair da exploração\n");
+        printf("Opcao: ");
+        scanf(" %c", &escolha);
+
+        if (escolha == 'e' && atual->esquerda != NULL) {
+            atual = atual->esquerda;
+        } else if (escolha == 'd' && atual->direita != NULL) {
+            atual = atual->direita;
+        } else if (escolha == 's') {
+            printf("👋 Saindo da mansão...\n");
+            break;
+        } else {
+            printf("⚠️ Caminho inválido. Tente novamente.\n");
+        }
+    }
+}
+
+int main() {
+    // Construção estática da árvore de cômodos
+    Sala *cozinha = criarSala("Cozinha", NULL, NULL);
+    Sala *biblioteca = criarSala("Biblioteca", NULL, NULL);
+    Sala *jardim = criarSala("Jardim", NULL, NULL);
+    Sala *escritorio = criarSala("Escritório", NULL, NULL);
+
+    Sala *salaEstar = criarSala("Sala de Estar", cozinha, biblioteca);
+    Sala *salaJantar = criarSala("Sala de Jantar", jardim, escritorio);
+
+    Sala *hallEntrada = criarSala("Hall de Entrada", salaEstar, salaJantar);
+
+    // Início da exploração
+    explorarSalas(hallEntrada);
+
+    // Liberação de memória
+    free(cozinha);
+    free(biblioteca);
+    free(jardim);
+    free(escritorio);
+    free(salaEstar);
+    free(salaJantar);
+    free(hallEntrada);
+
+    return 0;
+}
